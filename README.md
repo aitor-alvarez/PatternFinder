@@ -1,2 +1,2 @@
 # PatternFinder
-An algorithmic framework to retrieve musical patterns from renaissance music works. 
+An algorithmic framework to retrieve musical patterns from renaissance music. 
