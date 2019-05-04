@@ -1,4 +1,3 @@
-
 '''
 Python implementation of the Gap-Bide algorithm.
 Based on
@@ -63,7 +62,6 @@ class Gapbide:
             strPDB=strPDB.replace(']','')
             file_.write(strPDB+"\n")
             file_.close()
-            
             file_=open(self.file_name+'_intervals.txt','a')
             strPDB=str(pattern)
             file_.write(strPDB+str(sup)+"\n")
