@@ -40,7 +40,7 @@ class ClosedPatterns:
                     elif not self.isSubpattern(patterns[k][0], patterns[i][0]) and patterns[i][1]>1 and patterns[i][0] not in maximal and patterns[i][0] not in closed and len(patterns[i][0])>self.pattern_len:
                         maximal.append(patterns[i][0])
                         max_index.append(i)
-                    elif not self.isSubpattern(patterns[k][0], patterns[i][0]) and patterns[i][1]==1 and patterns[i][0] not in maximal and patterns[i][0] not in closed :
+                    elif not self.isSubpattern(patterns[k][0], patterns[i][0]) and patterns[i][1]==1 and patterns[i][0] not in maximal and patterns[i][0] not in closed and patterns[i][0] not in minimal:
                         minimal.append(patterns[i][0])
                         minimal_index.append(i)
         return closed, index, maximal, max_index, minimal, minimal_index

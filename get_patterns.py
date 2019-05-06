@@ -118,44 +118,45 @@ def show_patterns_in_score(score, patterns):
 def get_similar_sequences(patterns, candidates, durations=False):
     output_patterns=[]
     if durations == False:
-        for c, num in enumerate(candidates):
-            for p, numb in enumerate(patterns):
+        for num, c in enumerate(candidates):
+            for numb, p in enumerate(patterns):
                 if len(c)==len(p):
                     dif_direction = [1 for i, j in zip(c, p) if i[-1] != j[-1]]
-                    dif_interval = [abs(int(i[:-1])-int(j[:-1])) for i, j in zip(c, p) if i[:-1] != j[:-1]]
+                    #dif_interval = [abs(int(i[:-1])-int(j[:-1])) for i, j in zip(c, p) if i[:-1] != j[:-1]]
+                    dif_interval = [1 for i, j in zip(c, p) if i[:-1] != j[:-1]]
                     if sum (dif_direction)==0:
                         if sum(dif_interval)==0:
                             continue
-                        elif len(dif_interval)/len(p)<=0.5:
+                        elif len(dif_interval)/len(p)>=0.5:
                             continue
-                        elif 0.5<(len (dif_interval) / len (p))<0.8:
+                        elif 0.5>(len (dif_interval) / len (p))<0.2 and c not in output_patterns and c not in p:
                             output_patterns.append((c, num, p, numb, 'i1'))
-                        elif len(dif_interval) / len (p) >= 0.8:
+                        elif len(dif_interval) / len (p) <= 0.2 and c not in output_patterns and c not in p:
                             output_patterns.append ((c, num, p, numb, 'i2'))
-                    if sum (dif_direction) / len (p) > 0.8:
-                        if sum(dif_interval)>0.8:
+                    if sum (dif_direction) / len (p) < 0.2:
+                        if sum(dif_interval)<0.2 and c not in output_patterns and c not in p:
                             output_patterns.append ((c, num, p, numb, 'i3'))
-                    elif 0.5<(sum(dif_direction) / len (p))<0.8:
-                        if len(dif_interval) / len (p) <= 0.5:
+                    elif 0.5>(sum(dif_direction) / len (p))>0.2:
+                        if len(dif_interval) / len (p) >= 0.5:
                             continue
-                        elif 0.5 < (len (dif_interval) / len (p)) < 0.8:
+                        elif 0.5 > (len (dif_interval) / len (p)) < 0.2 and c not in output_patterns and c not in p:
                             output_patterns.append((c, num, p, numb, 'i4'))
-                        elif len(dif_interval) / len (p) >= 0.8:
+                        elif len(dif_interval) / len (p) <= 0.2 and c not in output_patterns and c not in p:
                             output_patterns.append((c, num, p, numb, 'i5'))
-                if len(c) != len(p) and (ClosedPatterns.isSubpattern(0, p, c) or ClosedPatterns.isSubpattern(0, c, p)):
+                if abs(len(c) - len(p))<=4 and (ClosedPatterns.isSubpattern(0, p, c) or ClosedPatterns.isSubpattern(0, c, p)):
                     if len(p)>len(c):
                         diff = [i for i in p if not i in c]
                         dist = len(diff)/len(p)
-                        if dist <= 0.5:
+                        if dist >= 0.5:
                             continue
-                        elif dist > 0.5:
+                        elif dist < 0.5 and c not in output_patterns and c not in p:
                             output_patterns.append ((c, num, p, numb, 'i6'))
                     elif len(c)>len(p):
                         diff = [i for i in c if not i in p]
                         dist = len (diff) / len (c)
-                        if dist <= 0.5:
+                        if dist >= 0.5:
                             continue
-                        elif dist > 0.5:
+                        elif dist < 0.5 and c not in output_patterns and c not in p:
                             output_patterns.append ((c, num, p, numb, 'i6'))
     if durations == True:
         for c, num in enumerate(candidates):
@@ -183,9 +184,8 @@ def get_similar_sequences(patterns, candidates, durations=False):
                         if dist <= 0.5:
                             continue
                         elif dist > 0.5:
-                            output_patterns.append ((c, num, p, numb, 'd2'))
+                            output_patterns.append ((c, num, p, numb, 'd3'))
     return output_patterns
-
 
 
 if __name__ == '__main__':
@@ -198,9 +198,14 @@ if __name__ == '__main__':
     g1.run()
     closed_patterns = ClosedPatterns(intervals_file+'_intervals.txt', pattern_length+2)
     closed, index, maximal, max_index, minimal, minimal_index = closed_patterns.execute()
-    closed, index = filter_patterns(closed, index)
-    maximal, max_index = filter_patterns(maximal, max_index)
+    similar = get_similar_sequences(maximal, minimal)
+    similar_ind = list(set([s[1] for s in similar]))
+    similar_ind = [s for s in similar_ind if s not in max_index]
+    #closed, index = filter_patterns(closed, index)
+    #maximal, max_index = filter_patterns(maximal, max_index)
     write_patterns(index, intervals_file + '_intervals.txt',intervals_file+'.txt', "output/closed_int.txt", "output/closed_int_patterns.txt")
     write_patterns (max_index, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/maximal_int.txt", "output/maximal_int_patterns.txt")
+    write_patterns(similar_ind, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/similar_int.txt",
+                   "output/similar_int_patterns.txt")
     patterns = read_patterns('interval_patterns.txt')
     show_patterns_in_score("obras/misa_quarti_toni_v.mid", patterns)
