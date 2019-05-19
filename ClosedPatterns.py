@@ -28,7 +28,7 @@ class ClosedPatterns:
                 if k == i:
                     continue
                 else:
-                    if self.isSubpattern(patterns[k][0], patterns[i][0]) and patterns[i][1]>1 and patterns[i][1]>patterns[k][1]:
+                    if self.isSubpattern(patterns[k][0], patterns[i][0]) and patterns[i][1]>1 and patterns[k][1]>1 and patterns[i][1]>patterns[k][1]:
                         if patterns[i][0] not in closed and patterns[i][0] not in maximal:
                             closed.append(patterns[i][0])
                             index.append(i)
@@ -37,7 +37,7 @@ class ClosedPatterns:
                         closed.remove(patterns[i][0])
                         index.pop(ind)
                         blocked.append(patterns[i][0])
-                    elif not self.isSubpattern(patterns[k][0], patterns[i][0]) and patterns[i][1]>1 and patterns[i][0] not in maximal and patterns[i][0] not in closed and len(patterns[i][0])>self.pattern_len:
+                    elif not self.isSubpattern(patterns[k][0], patterns[i][0]) and patterns[i][1]>1 and patterns[i][0] not in maximal and patterns[i][0] not in closed and len(patterns[i][0]):
                         maximal.append(patterns[i][0])
                         max_index.append(i)
                     elif not self.isSubpattern(patterns[k][0], patterns[i][0]) and patterns[i][1]==1 and patterns[i][0] not in maximal and patterns[i][0] not in closed and patterns[i][0] not in minimal:
@@ -56,10 +56,12 @@ class ClosedPatterns:
     def isSubpattern(self, pattern, sub):
         if len(sub) >= len(pattern):
             return False
-        for i in range (0, len (pattern) - len (sub) + 1):
-            if pattern[i:i + len (sub)] == sub:
-                return True
-        return False
+        else:
+            for i in range (0, len (pattern) - len (sub) + 1):
+                if pattern[i:i + len (sub)] == sub:
+                    return True
+                else:
+                    return False
 
 
     def parse_patterns(self, p):
