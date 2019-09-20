@@ -1,10 +1,12 @@
 from pygapbide import Gapbide
-import random
 from ClosedPatterns import ClosedPatterns
 from music21 import *
-import statistics
+from music21 import converter
 from dtwpy import dtw
-
+import pandas as pd
+from itertools import product
+from copy import deepcopy
+import sys
 
 def parse_midi_file(file):
     midi_file = converter.parse(file)
@@ -65,13 +67,11 @@ def write_patterns(index, file1, file2, output_file1, output_file2):
     file_2.close()
 
 
-def filter_patterns(patterns, index):
-    length = [len(p) for p in patterns]
-    mean_length = statistics.median(length)
+def filter_patterns(patterns, index, length):
     out_pat=[]
     out_ind=[]
     for num, elem in enumerate(patterns):
-        if len(elem)>=mean_length:
+        if len(elem)>=length:
             out_pat.append(patterns[num])
             out_ind.append(index[num])
     return out_pat, out_ind
@@ -95,12 +95,34 @@ def read_patterns(filename):
     return patterns
 
 
+def getPhrases(piece):
+    phrases = []
+    for part in piece.getElementsByClass(stream.Part):
+        partFlat = part.flat
+        notesandrests = partFlat.notesAndRests
+        myPhrase = []
+        countElement = 0
+        for element in notesandrests:
+            countElement += 1
+            if isinstance(element, note.Note):
+                myPhrase.append(element)
+            else:
+                if (len(myPhrase) > 0):
+                    phrases.append(myPhrase)
+                myPhrase = []
+
+            if countElement == len(notesandrests):
+                phrases.append(myPhrase)
+                myPhrase = []
+
+    return phrases
+
+
 def show_patterns_in_score(score, patterns):
-    sequences = parse_midi_file(score)
+    sequences = getPhrases(score)
     index = 0
     for patternLine in patterns:
         index += 1
-        color = "#%06x" % random.randint (0, 0xFFFFFF)
         for pattern in patternLine:
             indexPhrase = pattern[0]
             startPosition = pattern[1]
@@ -110,7 +132,6 @@ def show_patterns_in_score(score, patterns):
             if startPosition < 0:
                 startPosition = 0
             for i in range (startPosition, endPosition + 1):
-                notes[i].style.color = color
                 notes[i].addLyric (index)
 
     score.show ()
@@ -139,9 +160,6 @@ def get_similar_sequences(patterns, candidates):
                     continue
                 elif len(dif) / len(p) >= 0.5:
                     continue
-                #elif 0.5 > (len(dif) / len(p)) > 0.2 and c not in patt and c not in p:
-                  #  output_patterns.append((c, num, p, numb, 'p3'))
-                  #  patt.append(c)
                 elif len(dif) / len(p) <= 0.2 and c not in patt and c not in p:
                     output_patterns.append((c, num, p, numb, 'p4'))
                     patt.append(c)
@@ -149,10 +167,34 @@ def get_similar_sequences(patterns, candidates):
     return output_patterns
 
 
+def dtw_matrix_similarity(data):
+    output_dtw=[]
+    for ind1, d1 in enumerate(data):
+        for ind2, d2 in enumerate(data):
+            output_dtw.append((ind1, ind2, dtw(d1, d2)))
+    return output_dtw
+
+
+def filter_subpatterns(list1, indx):
+    pat1= deepcopy(list1)
+    pat_ind = deepcopy(indx)
+    for p in product(pat1, repeat=2):
+        if ClosedPatterns.isSubpattern(None, p[0], p[1]) and p[1] in pat1:
+            ind = pat1.index(p[1])
+            pat1.remove(p[1])
+            pat_ind.pop(ind)
+        elif ClosedPatterns.isSubpattern(None, p[1], p[0]) and p[0] in pat1:
+            ind = pat1.index(p[0])
+            pat1.remove(p[0])
+            pat_ind.pop(ind)
+    return pat1, pat_ind
+
+
 if __name__ == '__main__':
-    pattern_length = 6
+    pattern_length = 4
     intervals_file = 'interval_patterns'
-    seq = parse_midi_file("obras/misa_quarti_toni_v.mid")
+    #midi file
+    seq = parse_midi_file(sys.argv[1])
     inter = [get_intervals(s) for s in seq]
     intervals = [[i[0] for i in it] for it in inter]
     contours = [[i[1] for i in it] for it in inter]
@@ -161,15 +203,28 @@ if __name__ == '__main__':
     g1.run()
     closed_patterns = ClosedPatterns(intervals_file+'_intervals.txt', pattern_length+2)
     closed, index, maximal, max_index, minimal, minimal_index = closed_patterns.execute()
+    maximal, max_index = filter_subpatterns(maximal, max_index)
+    minimal, minimal_index = filter_subpatterns(minimal, minimal_index)
+    closed, index = filter_subpatterns(closed, index)
     similar = get_similar_sequences(maximal, minimal)
     similar_ind = list(set([s[1] for s in similar]))
     similar_ind = [s for s in similar_ind if s not in max_index]
     dtw_sim =[(dtw(s[0], s[2]), s[1], s[3]) for s in similar]
-    pairs_sim=[d for d in dtw_sim if d[0]<=60]
-    write_patterns(index, intervals_file + '_intervals.txt',intervals_file+'.txt', "output/closed_int.txt", "output/closed_int_patterns.txt")
-    write_patterns (max_index, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/maximal_int.txt", "output/maximal_int_patterns.txt")
-
-    write_patterns(similar_ind, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/similar_int.txt",
-                   "output/similar_int_patterns.txt")
-    patterns = read_patterns('interval_patterns.txt')
-    show_patterns_in_score("obras/misa_quarti_toni_v.mid", patterns)
+    pairs_sim=[d for d in dtw_sim if d[0]<=90]
+    candidates_id =[minimal_index[p[2]] for p in pairs_sim]
+    mat = pd.DataFrame(dtw_matrix_similarity(maximal))
+    mat.columns = ['index1', 'index2', 'dtw']
+    #print to excel
+    mat.to_excel("max_patterns.xlsx")
+    filtered_pat, pat_ind = filter_patterns(maximal, max_index, 10)
+    write_patterns (max_index, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/maximal.txt", "output/maximal_patterns.txt")
+    write_patterns(minimal_index, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/minimal.txt",
+                   "output/minimal_patterns.txt")
+    write_patterns(index, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/closed.txt",
+                   "output/closed_patterns.txt")
+    #Read patterns and show in score
+    #patterns = read_patterns('output/maximal_patterns.txt')
+    #patterns_similar = read_patterns('output/similar_int_patterns.txt')
+    #obra = converter.parse(sys.argv[1])
+    #show_patterns_in_score(obra, patterns)
+    #Printing pairs of patterns
