@@ -18,4 +18,4 @@ The code outputs in the folder "output" 6 files: 'closed.txt', 'maximal.txt', 'm
 
 The program also, performs a similarity task using Dynamic Time Warping (DTW) on the maximal and closed patterns, and outputs 2 excel files with the comparison of all patterns on each category.
 
-The main file get_patterns.py also contains a function get_similar_sequences() that takes two sets of sequences and returns the ones that are similar to each other following a percentage criterium.
+The main file get_patterns.py also contains a function get_similar_sequences() that takes two sets of sequences and returns the ones that are similar to each other following a percentage critera.
