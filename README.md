@@ -1,5 +1,5 @@
 # PatternFinder
-An algorithmic framework for retrieving musical patterns from Renaissance music. 
+An algorithmic framework for retrieving musical patterns from MIDI files.
 
 
 ## Installation
