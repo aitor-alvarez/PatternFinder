@@ -213,9 +213,12 @@ if __name__ == '__main__':
     pairs_sim=[d for d in dtw_sim if d[0]<=90]
     candidates_id =[minimal_index[p[2]] for p in pairs_sim]
     mat = pd.DataFrame(dtw_matrix_similarity(maximal))
+    mat2 = pd.DataFrame(dtw_matrix_similarity(closed))
     mat.columns = ['index1', 'index2', 'dtw']
+    mat2.columns = ['index1', 'index2', 'dtw']
     #print to excel
     mat.to_excel("max_patterns.xlsx")
+    mat2.to_excel("closed_patterns.xlsx")
     filtered_pat, pat_ind = filter_patterns(maximal, max_index, 10)
     write_patterns (max_index, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/maximal.txt", "output/maximal_patterns.txt")
     write_patterns(minimal_index, intervals_file + '_intervals.txt', intervals_file + '.txt', "output/minimal.txt",
